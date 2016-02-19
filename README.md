@@ -1,3 +1,3 @@
-elm-version
+elm-etch-sketch
 
-this is a port of the purescript code to elm, using elm-html and elm-svg instead of JS to render the app
+This is an Elm version of my other repo, purescript-etch-sketch, using elm-html and elm-svg to render the app
