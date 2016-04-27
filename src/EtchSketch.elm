@@ -13,6 +13,7 @@ type Direction
   | Down
   | Left
   | Right
+  | None
 
 
 type Coords
@@ -85,6 +86,9 @@ moveCursor direction state =
 
             Right ->
               Coords (x + 1) y
+
+            None ->
+              state.cursor
       in
         if isInvalidPoint state cursor' then
           state
@@ -142,29 +146,29 @@ view state =
       ]
 
 
-getKeyDirection : KeyCode -> Maybe Direction
+getKeyDirection : KeyCode -> Direction
 getKeyDirection keyCode =
   case keyCode of
     38 ->
-      Just Up
+      Up
 
     40 ->
-      Just Down
+      Down
 
     37 ->
-      Just Left
+      Left
 
     39 ->
-      Just Right
+      Right
 
     _ ->
-      Nothing
+      None
 
 
 port keyboard : Signal KeyCode
 keyDirections : Signal Direction
 keyDirections =
-  Signal.filterMap getKeyDirection Up keyboard
+  Signal.map getKeyDirection keyboard
 
 
 screenWipes : Signal.Mailbox Bool

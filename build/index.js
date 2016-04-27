@@ -12200,7 +12200,8 @@ Elm.Main.make = function (_elm) {
          {case "Up": return A2(Coords,_p11,_p12 - 1);
             case "Down": return A2(Coords,_p11,_p12 + 1);
             case "Left": return A2(Coords,_p11 - 1,_p12);
-            default: return A2(Coords,_p11 + 1,_p12);}
+            case "Right": return A2(Coords,_p11 + 1,_p12);
+            default: return state.cursor;}
       }();
       var points$ = A2(insertPoint,state.cursor,state.points);
       return A2(isInvalidPoint,
@@ -12208,6 +12209,7 @@ Elm.Main.make = function (_elm) {
       cursor$) ? state : _U.update(state,
       {cursor: cursor$,points: points$});
    });
+   var None = {ctor: "None"};
    var Right = {ctor: "Right"};
    var Left = {ctor: "Left"};
    var Down = {ctor: "Down"};
@@ -12215,16 +12217,13 @@ Elm.Main.make = function (_elm) {
    var getKeyDirection = function (keyCode) {
       var _p13 = keyCode;
       switch (_p13)
-      {case 38: return $Maybe.Just(Up);
-         case 40: return $Maybe.Just(Down);
-         case 37: return $Maybe.Just(Left);
-         case 39: return $Maybe.Just(Right);
-         default: return $Maybe.Nothing;}
+      {case 38: return Up;
+         case 40: return Down;
+         case 37: return Left;
+         case 39: return Right;
+         default: return None;}
    };
-   var keyDirections = A3($Signal.filterMap,
-   getKeyDirection,
-   Up,
-   keyboard);
+   var keyDirections = A2($Signal.map,getKeyDirection,keyboard);
    var projects = $Signal.mergeMany(_U.list([A2($Signal.map,
                                             moveCursor,
                                             keyDirections)
@@ -12240,6 +12239,7 @@ Elm.Main.make = function (_elm) {
                              ,Down: Down
                              ,Left: Left
                              ,Right: Right
+                             ,None: None
                              ,Coords: Coords
                              ,State: State
                              ,initState: initState
