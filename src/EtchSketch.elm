@@ -1,11 +1,11 @@
 module Main (..) where
 
 import Char exposing (KeyCode)
-import Html exposing (..)
-import Html.Attributes as A
-import Html.Events as E
-import Svg
-import Svg.Attributes as SvgA
+import Html exposing (Html, div, button, text)
+import Html.Attributes exposing (key, style)
+import Html.Events exposing (onClick)
+import Svg exposing (svg, rect)
+import Svg.Attributes as SvgAttrs
 
 
 type Direction
@@ -103,12 +103,12 @@ wipeScreen _ state =
 
 point : Int -> String -> Coords -> Html
 point increment subkey (Coords x y) =
-  Svg.rect
-    [ A.key <| subkey ++ toString x ++ "," ++ toString y
-    , SvgA.width <| toString increment
-    , SvgA.height <| toString increment
-    , SvgA.x <| toString <| x * increment
-    , SvgA.y <| toString <| y * increment
+  rect
+    [ key <| subkey ++ toString x ++ "," ++ toString y
+    , SvgAttrs.width <| toString increment
+    , SvgAttrs.height <| toString increment
+    , SvgAttrs.x <| toString <| x * increment
+    , SvgAttrs.y <| toString <| y * increment
     ]
     []
 
@@ -130,15 +130,15 @@ view state =
       [ div
           []
           [ button
-              [ E.onClick screenWipes.address True ]
+              [ onClick screenWipes.address True ]
               [ text "Clear" ]
           ]
       , div
           []
-          [ Svg.svg
-              [ A.style [ ( "border", "1px solid black" ) ]
-              , SvgA.width <| toString state.width
-              , SvgA.height <| toString state.height
+          [ svg
+              [ style [ ( "border", "1px solid black" ) ]
+              , SvgAttrs.width <| toString state.width
+              , SvgAttrs.height <| toString state.height
               ]
               <| cursor
               :: points
