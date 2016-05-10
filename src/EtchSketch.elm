@@ -1,9 +1,10 @@
-module Main (..) where
+module Main exposing (..)
 
-import Char exposing (KeyCode)
+import Html.App exposing (program)
 import Html exposing (Html, div, button, text)
-import Html.Attributes exposing (key, style)
+import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
+import Keyboard exposing (KeyCode, downs)
 import Svg exposing (svg, rect)
 import Svg.Attributes as SvgAttrs
 
@@ -13,14 +14,13 @@ type Direction
   | Down
   | Left
   | Right
-  | None
 
 
 type Coords
   = Coords Int Int
 
 
-type alias State =
+type alias Model =
   { cursor : Coords
   , points : List Coords
   , width : Int
@@ -29,8 +29,14 @@ type alias State =
   }
 
 
-initState : State
-initState =
+type Msg
+  = MoveCursor Direction
+  | ClearScreen
+  | NoOp
+
+
+init : Model
+init =
   { cursor = Coords 0 0
   , points = []
   , width = 800
@@ -39,17 +45,17 @@ initState =
   }
 
 
-isInvalidPoint : State -> Coords -> Bool
-isInvalidPoint state coords =
+isInvalidPoint : Model -> Coords -> Bool
+isInvalidPoint model coords =
   case coords of
     Coords x y ->
       if x < 0 then
         True
       else if y < 0 then
         True
-      else if (state.increment * (x + 1)) > state.width then
+      else if (model.increment * (x + 1)) > model.width then
         True
-      else if (state.increment * (y + 1)) > state.height then
+      else if (model.increment * (y + 1)) > model.height then
         True
       else
         False
@@ -65,13 +71,13 @@ insertPoint point points =
       point :: points
 
 
-moveCursor : Direction -> State -> State
-moveCursor direction state =
-  case state.cursor of
+moveCursor : Direction -> Model -> Model
+moveCursor direction model =
+  case model.cursor of
     Coords x y ->
       let
         points' =
-          insertPoint state.cursor state.points
+          insertPoint model.cursor model.points
 
         cursor' =
           case direction of
@@ -87,25 +93,28 @@ moveCursor direction state =
             Right ->
               Coords (x + 1) y
 
-            None ->
-              state.cursor
       in
-        if isInvalidPoint state cursor' then
-          state
+        if isInvalidPoint model cursor' then
+          model
         else
-          { state | cursor = cursor', points = points' }
+          { model | cursor = cursor', points = points' }
 
 
-wipeScreen : a -> State -> State
-wipeScreen _ state =
-  { state | points = [] }
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    ClearScreen ->
+      ( { model | points = [] }, Cmd.none )
+    MoveCursor direction ->
+      ( moveCursor direction model, Cmd.none )
+    NoOp ->
+      ( model, Cmd.none )
 
 
-point : Int -> String -> Coords -> Html
+point : Int -> String -> Coords -> Html Msg
 point increment subkey (Coords x y) =
   rect
-    [ key <| subkey ++ toString x ++ "," ++ toString y
-    , SvgAttrs.width <| toString increment
+    [ SvgAttrs.width <| toString increment
     , SvgAttrs.height <| toString increment
     , SvgAttrs.x <| toString <| x * increment
     , SvgAttrs.y <| toString <| y * increment
@@ -113,32 +122,32 @@ point increment subkey (Coords x y) =
     []
 
 
-view : State -> Html
-view state =
+view : Model -> Html Msg
+view model =
   let
     point' =
-      point state.increment
+      point model.increment
 
     cursor =
-      point' "cursor" state.cursor
+      point' "cursor" model.cursor
 
     points =
-      List.map (point' "point") state.points
+      List.map (point' "point") model.points
   in
     div
       []
       [ div
           []
           [ button
-              [ onClick screenWipes.address True ]
+              [ onClick ClearScreen ]
               [ text "Clear" ]
           ]
       , div
           []
           [ svg
               [ style [ ( "border", "1px solid black" ) ]
-              , SvgAttrs.width <| toString state.width
-              , SvgAttrs.height <| toString state.height
+              , SvgAttrs.width <| toString model.width
+              , SvgAttrs.height <| toString model.height
               ]
               <| cursor
               :: points
@@ -146,44 +155,29 @@ view state =
       ]
 
 
-getKeyDirection : KeyCode -> Direction
+getKeyDirection : KeyCode -> Msg
 getKeyDirection keyCode =
   case keyCode of
     38 ->
-      Up
+      MoveCursor Up
 
     40 ->
-      Down
+      MoveCursor Down
 
     37 ->
-      Left
+      MoveCursor Left
 
     39 ->
-      Right
+      MoveCursor Right
 
     _ ->
-      None
+      NoOp
 
 
-port keyboard : Signal KeyCode
-keyDirections : Signal Direction
-keyDirections =
-  Signal.map getKeyDirection keyboard
-
-
-screenWipes : Signal.Mailbox Bool
-screenWipes =
-  Signal.mailbox True
-
-
-projects : Signal (State -> State)
-projects =
-  Signal.mergeMany
-    [ Signal.map moveCursor keyDirections
-    , Signal.map wipeScreen screenWipes.signal
-    ]
-
-
-main : Signal Html
 main =
-  Signal.map view <| Signal.foldp (<|) initState projects
+  program
+    { init = ( init, Cmd.none )
+    , update = update
+    , view = view
+    , subscriptions = (\_ -> downs getKeyDirection)
+    }
